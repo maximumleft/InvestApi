@@ -75,16 +75,17 @@ class TinkoffInvestService
 
             // Стандартизируем структуру ответа
             return [
-                'total_amount' => $portfolioData['totalAmountPortfolio']['value'] ?? 0,
+                'total_amount' => $portfolioData['totalAmountPortfolio']['units'] ?? 0,
                 'currency' => $portfolioData['totalAmountPortfolio']['currency'] ?? 'RUB',
                 'positions' => array_map(function($position) {
                     return [
                         'figi' => $position['figi'],
+                        'ticker' => $position['ticker'],
                         'instrument_type' => $position['instrumentType'],
                         'quantity' => $position['quantity']['units'] ?? 0,
-                        'average_price' => $position['averagePositionPrice']['value'] ?? 0,
-                        'expected_yield' => $position['expectedYield']['value'] ?? 0,
-                        'current_price' => $position['currentPrice']['value'] ?? 0,
+                        'average_price' => $position['averagePositionPrice']['units'] ?? 0,
+                        'expected_yield' => $position['expectedYield']['units'] ?? 0,
+                        'current_price' => $position['currentPrice']['units'] ?? 0,
                         'currency' => $position['averagePositionPrice']['currency'] ?? 'RUB'
                     ];
                 }, $portfolioData['positions'] ?? []),

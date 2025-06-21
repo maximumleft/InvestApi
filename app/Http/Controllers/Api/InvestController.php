@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\TinkoffInvestService;
+use App\Services\Tinkoff\TinkoffInvestService;
 use Illuminate\Http\JsonResponse;
 
 class InvestController extends Controller

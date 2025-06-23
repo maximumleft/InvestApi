@@ -2,6 +2,7 @@
 
 namespace App\Services\Tinkoff;
 
+use App\Models\BrokerageAccount;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Cache;
 
@@ -26,6 +27,14 @@ class TinkoffInvestService
         if (!isset($data['accounts'])) {
             throw new \RuntimeException('Invalid API response format');
         }
+
+//        foreach ($data['accounts'] as $account) {
+//            BrokerageAccount::create(
+//                [
+//                    'user_id' => $account['id'],
+//                ]
+//            );
+//        }
 
         return $data['accounts'];
     }

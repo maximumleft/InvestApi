@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('brokerage_account', function (Blueprint $table) {
+        Schema::create('brokerage_accounts', function (Blueprint $table) {
             $table->string('id')->unique();
             $table->foreignId('user_id')->constrained('users', 'id')->cascadeOnDelete();
         });
@@ -22,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('brokerage_account');
+        Schema::dropIfExists('brokerage_accounts');
     }
 };

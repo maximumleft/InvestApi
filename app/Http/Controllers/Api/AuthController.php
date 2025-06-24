@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -11,6 +12,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
+    //TODO Отрефачить на реквест классы, на ресурсы. Покрыть тестами. Просить у юзера ключ апи тинька. Написать отношения и заносить данные в бд
     public function register(Request $request): JsonResponse
     {
         $validatedData = $request->validate([

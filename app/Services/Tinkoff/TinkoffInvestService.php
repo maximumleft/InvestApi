@@ -3,6 +3,7 @@
 namespace App\Services\Tinkoff;
 
 use App\Models\BrokerageAccount;
+use App\Models\User;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Cache;
 
@@ -12,8 +13,10 @@ class TinkoffInvestService
 
     public function __construct()
     {
+        $user = User::find(auth()->user()->getAuthIdentifier());
+
         $this->requestBuilder = new TinkoffApiRequestBuilder(
-            config('tinkoff-invest.api_token'),
+            $user->tinkoff_token_api,
             config('tinkoff-invest.api_url')
         );
     }

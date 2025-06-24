@@ -23,6 +23,7 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
+        'tinkoff_token_api',
     ];
 
     /**
@@ -34,6 +35,7 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'remember_token',
     ];
+    private mixed $tinkoff_token_api;
 
     /**
      * Get the attributes that should be cast.
@@ -66,5 +68,17 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims(): array
     {
         return [];
+    }
+
+    public function getTinkoffTokenApi(): string
+    {
+        return $this->tinkoff_token_api;
+    }
+
+    public function setTinkoffTokenApi(string $value): self
+    {
+        $this->tinkoff_token_api = $value;
+        $this->save();
+        return $this;
     }
 }

@@ -70,15 +70,4 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
-    public function getTinkoffTokenApi(): string
-    {
-        return $this->tinkoff_token_api;
-    }
-
-    public function setTinkoffTokenApi(string $value): self
-    {
-        $this->tinkoff_token_api = $value;
-        $this->save();
-        return $this;
-    }
 }

@@ -4,19 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\Tinkoff\TinkoffInvestService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    protected TinkoffInvestService $investService;
-
-    public function __construct(TinkoffInvestService $investService)
-    {
-        $this->investService = $investService;
-    }
-
     public function setTinkoffTokenApi(Request $Request): JsonResponse
     {
         $validatedData = $Request->validate([

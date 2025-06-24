@@ -10,13 +10,14 @@ use Illuminate\Support\Facades\Cache;
 class TinkoffInvestService
 {
     private TinkoffApiRequestBuilder $requestBuilder;
+    private User $user;
 
     public function __construct()
     {
-        $user = User::find(auth()->user()->getAuthIdentifier());
+        $this->user = User::find(auth()->user()->getAuthIdentifier());
 
         $this->requestBuilder = new TinkoffApiRequestBuilder(
-            $user->tinkoff_token_api,
+            $this->user->tinkoff_token_api,
             config('tinkoff-invest.api_url')
         );
     }
@@ -30,14 +31,15 @@ class TinkoffInvestService
         if (!isset($data['accounts'])) {
             throw new \RuntimeException('Invalid API response format');
         }
-
-//        foreach ($data['accounts'] as $account) {
-//            BrokerageAccount::create(
-//                [
-//                    'user_id' => $account['id'],
-//                ]
-//            );
-//        }
+        foreach ($data['accounts'] as $account) {
+            BrokerageAccount::firstOrCreate(
+                ['account_id' => $account['id']],
+                [
+                    'account_id' => $account['id'],
+                    'user_id' => $this->user->id,
+                ]
+            );
+        }
 
         return $data['accounts'];
     }

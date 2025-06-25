@@ -12,7 +12,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
-    //TODO Отрефачить на реквест классы, на ресурсы. Покрыть тестами. Просить у юзера ключ апи тинька. Написать отношения и заносить данные в бд
+    //TODO Отрефачить на реквест классы, на ресурсы. Покрыть тестами. Написать отношения. Написать команду синхронизации
     public function register(Request $request): JsonResponse
     {
         $validatedData = $request->validate([

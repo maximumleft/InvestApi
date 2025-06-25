@@ -12,11 +12,10 @@ class UserController extends Controller
     public function setTinkoffTokenApi(Request $Request): JsonResponse
     {
         $validatedData = $Request->validate([
-            'tinkoff_token' => 'required|string|max:512',  // Более стандартное имя поля
+            'tinkoff_token' => 'required|string|max:512',
         ]);
 
         try {
-            // Получаем авторизованного пользователя
             $userId = auth()->user()->getAuthIdentifier();
 
             if (!$userId) {

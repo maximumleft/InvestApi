@@ -3,6 +3,7 @@
 namespace App\Services\Tinkoff;
 
 use App\Models\BrokerageAccount;
+use App\Models\Positions;
 use App\Models\User;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Cache;
@@ -67,16 +68,21 @@ class TinkoffInvestService
 
     private function mapPosition(array $position): array
     {
-        return [
-            'figi' => $position['figi'] ?? '',
-            'ticker' => $position['ticker'] ?? '',
-            'instrument_type' => $position['instrumentType'] ?? '',
-            'quantity' => $position['quantity']['units'] ?? 0,
-            'average_price' => $position['averagePositionPrice']['units'] ?? 0,
-            'expected_yield' => $position['expectedYield']['units'] ?? 0,
-            'current_price' => $position['currentPrice']['units'] ?? 0,
-            'currency' => $position['averagePositionPrice']['currency'] ?? 'RUB'
-        ];
+        $position = Positions::firstOrCreate(
+            ['figi' => $position['figi']],
+            [
+                'figi' => $position['figi'],
+                'ticker' => $position['ticker'],
+                'quantity' => $position['quantity']['units'] ?? 0,
+                'average_price' => (int)($position['averagePositionPrice']['units'] ?? 0) +
+                    ($position['averagePositionPrice']['nano'] ?? 0) / 1000000000,
+                'expected_yield' => (int)($position['expectedYield']['units'] ?? 0) +
+                    ($position['expectedYield']['nano'] ?? 0) / 1000000000,
+                'current_price' => (int)($position['currentPrice']['units'] ?? 0) +
+                    ($position['currentPrice']['nano'] ?? 0) / 1000000000,
+                'currency' => $position['averagePositionPrice']['currency'],
+            ]);
+        return $position->toArray();
     }
 
     /**

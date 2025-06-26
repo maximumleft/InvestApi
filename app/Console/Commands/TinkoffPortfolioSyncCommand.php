@@ -2,29 +2,26 @@
 
 namespace App\Console\Commands;
 
+use App\Models\User;
+use App\Services\Tinkoff\TinkoffInvestService;
 use Illuminate\Console\Command;
 
 class TinkoffPortfolioSyncCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'sync:tinkoff-portfolio';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Command description';
 
-    /**
-     * Execute the console command.
-     */
+    public function __construct(
+        private readonly TinkoffInvestService $investService
+    ) {
+        parent::__construct();
+    }
+
     public function handle()
     {
-        //
+//        $users = User::all();
+//        foreach ($users as $user) {
+//            $this->investService->getAccounts()
+//        }
     }
 }

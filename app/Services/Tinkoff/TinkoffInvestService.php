@@ -2,54 +2,58 @@
 
 namespace App\Services\Tinkoff;
 
-use App\Models\BrokerageAccount;
 use App\Models\Positions;
 use App\Models\User;
+use App\Repositories\Contracts\BrokerageAccountRepositoryInterface;
+use App\Repositories\Contracts\PositionRepositoryInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Cache;
 
-class TinkoffInvestService
+readonly class TinkoffInvestService
 {
-    private TinkoffApiRequestBuilder $requestBuilder;
-    private User $user;
-
-    public function __construct()
+    public function __construct(
+        private BrokerageAccountRepositoryInterface $accountRepository,
+        private PositionRepositoryInterface $positionRepository,
+    )
     {
-        $this->user = User::find(auth()->user()->getAuthIdentifier());
+    }
 
-        $this->requestBuilder = new TinkoffApiRequestBuilder(
-            $this->user->tinkoff_token_api,
+    public function makeRequestBuilder(User $user): TinkoffApiRequestBuilder
+    {
+        return new TinkoffApiRequestBuilder(
+            $user->tinkoff_token_api,
             config('tinkoff-invest.api_url')
         );
     }
 
+    public function getAuthUser(): User
+    {
+        return User::find(auth()->user()->getAuthIdentifier());
+    }
+
     public function getAccounts(): array
     {
-        $data = $this->requestBuilder->makeRequest(
+        $user = $this->getAuthUser();
+        $data = $this->makeRequestBuilder($user)->makeRequest(
             'tinkoff.public.invest.api.contract.v1.UsersService/GetAccounts'
         );
 
         if (!isset($data['accounts'])) {
             throw new \RuntimeException('Invalid API response format');
         }
-        foreach ($data['accounts'] as $account) {
-            BrokerageAccount::firstOrCreate(
-                ['account_id' => $account['id']],
-                [
-                    'account_id' => $account['id'],
-                    'user_id' => $this->user->id,
-                ]
+        return array_map(function ($account) use ($user) {
+            return $this->accountRepository->firstOrCreate(
+                $account['id'],
+                $user->id
             );
-        }
-
-        return $data['accounts'];
+        }, $data['accounts']);
     }
 
     public function getPortfolio(string $accountId): array
     {
         return Cache::remember("instrument_{$accountId}", now()->addHours(3), function () use ($accountId) {
 
-            $data = $this->requestBuilder->makeRequest(
+            $data = $this->makeRequestBuilder($this->getAuthUser())->makeRequest(
                 'tinkoff.public.invest.api.contract.v1.OperationsService/GetPortfolio',
                 ['accountId' => $accountId, 'currency' => 'RUB']
             );
@@ -66,23 +70,34 @@ class TinkoffInvestService
         });
     }
 
-    private function mapPosition(array $position): array
+    private function mapPosition(array $positionData): array
     {
-        $position = Positions::firstOrCreate(
-            ['figi' => $position['figi']],
-            [
-                'figi' => $position['figi'],
-                'ticker' => $position['ticker'],
-                'quantity' => $position['quantity']['units'] ?? 0,
-                'average_price' => (int)($position['averagePositionPrice']['units'] ?? 0) +
-                    ($position['averagePositionPrice']['nano'] ?? 0) / 1000000000,
-                'expected_yield' => (int)($position['expectedYield']['units'] ?? 0) +
-                    ($position['expectedYield']['nano'] ?? 0) / 1000000000,
-                'current_price' => (int)($position['currentPrice']['units'] ?? 0) +
-                    ($position['currentPrice']['nano'] ?? 0) / 1000000000,
-                'currency' => $position['averagePositionPrice']['currency'],
-            ]);
-        return $position->toArray();
+        // Валидация входных данных
+        if (empty($positionData['figi'])) {
+            throw new \InvalidArgumentException('FIGI is required for position mapping');
+        }
+
+        // Получаем данные для обновления
+        $attributes = [
+            'ticker' => $positionData['ticker'] ?? null,
+            'quantity' => $positionData['quantity']['units'] ?? 0,
+            'average_price' => $this->calculatePrice($positionData['averagePositionPrice'] ?? []),
+            'expected_yield' => $this->calculatePrice($positionData['expectedYield'] ?? []),
+            'current_price' => $this->calculatePrice($positionData['currentPrice'] ?? []),
+            'currency' => $positionData['averagePositionPrice']['currency'] ?? 'RUB',
+        ];
+
+        // Используем репозиторий для поиска/создания позиции
+        return $this->positionRepository->updateOrCreate(
+            ['figi' => $positionData['figi']],
+            $attributes,
+            12 // часов для проверки обновления
+        )->toArray();
+    }
+
+    protected function calculatePrice(array $priceData): float
+    {
+        return ($priceData['units'] ?? 0) + ($priceData['nano'] ?? 0) / 100000000;
     }
 
     /**
@@ -92,7 +107,7 @@ class TinkoffInvestService
     {
         return Cache::remember("position_{$accountId}", now()->addHours(3), function () use ($accountId) {
             try {
-                $responseData = $this->requestBuilder->makeRequest(
+                $responseData = $this->makeRequestBuilder($this->getAuthUser())->makeRequest(
                     'tinkoff.public.invest.api.contract.v1.OperationsService/GetPositions',
                     ['accountId' => $accountId]
                 );
@@ -155,7 +170,7 @@ class TinkoffInvestService
     {
         return Cache::remember("instrument_{$figi}", now()->addHours(3), function () use ($figi) {
             try {
-                $data = $this->requestBuilder->makeRequest(
+                $data = $this->makeRequestBuilder($this->getAuthUser())->makeRequest(
                     'tinkoff.public.invest.api.contract.v1.InstrumentsService/GetInstrumentBy',
                     [
                         'idType' => 1, // 1 = FIGI
